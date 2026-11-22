@@ -8,10 +8,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-neutral-50 text-neutral-900 min-h-screen">
-  <!-- Toast Notification -->
   <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl border border-neutral-700 max-w-md"></div>
 
-  <!-- Lock Screen -->
   <div id="lockScreen" class="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
     <form id="loginForm" class="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
       <div class="text-center">
@@ -26,7 +24,6 @@
     </form>
   </div>
 
-  <!-- Main Admin App -->
   <div id="adminApp" class="hidden min-h-screen">
     <header class="bg-black text-white px-4 sm:px-8 py-4 sticky top-0 z-30">
       <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
@@ -34,14 +31,13 @@
           <span class="font-black text-xl tracking-tight">GROW<span class="text-emerald-500">MORE</span></span>
           <span class="text-[11px] bg-neutral-800 text-neutral-300 px-2.5 py-1 rounded-full font-semibold">HTML ADMIN</span>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="syncDefaultsBtn" type="button" class="bg-emerald-700 hover:bg-emerald-600 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer">
+            Sync Defaults to Supabase
+          </button>
           <button id="refreshBtn" type="button" class="bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer">
             Refresh Data
           </button>
-          <a id="liveStoreLink" href="#" target="_blank" rel="noopener noreferrer"
-            class="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold px-4 py-2 rounded-xl">
-            View Live Store →
-          </a>
         </div>
       </div>
     </header>
@@ -65,14 +61,14 @@
         </div>
 
         <div>
-          <label class="block text-xs font-bold mb-1">Upload Banner Image (R2 via Upload Endpoint)</label>
+          <label class="block text-xs font-bold mb-1">Upload Banner Image (R2)</label>
           <input id="bannerFile" type="file" accept="image/*"
             class="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-black file:text-white file:font-bold cursor-pointer" />
         </div>
 
         <div>
-          <label class="block text-xs font-bold mb-1">Banner Image URL (Supabase mein save hoga)</label>
-          <input id="bannerImageInput" type="text"
+          <label class="block text-xs font-bold mb-1">Banner Image URL (Ya Website Ki Picture Link)</label>
+          <input id="bannerImageInput" type="text" placeholder="https://pub-d70940bb93eb4727953b2e2c02263b46.r2.dev/..."
             class="w-full border border-neutral-300 rounded-xl px-3.5 py-2.5 text-sm" />
         </div>
 
@@ -153,10 +149,10 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold mb-1">Product Image (R2 Upload)</label>
+              <label class="block text-xs font-bold mb-1">Product Image (Upload to R2 ya Image URL)</label>
               <input id="prodFile" type="file" accept="image/*"
                 class="text-xs file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-black file:text-white file:font-bold cursor-pointer" />
-              <input id="prodImage" type="text" placeholder="Ya direct image URL paste karein"
+              <input id="prodImage" type="text" placeholder="https://pub-d70940bb93eb4727953b2e2c02263b46.r2.dev/..."
                 class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs mt-2" />
             </div>
 
@@ -186,11 +182,21 @@
     const SUPABASE_URL = "https://qqhriwqrmnxkzvxznwgj.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_E82sBQzTXpTMtTaQ-s0TVg_rKmjkrVS";
     const R2_UPLOAD_ENDPOINT = "https://growmore-marketplace-admin-6h7nzun74-growmoreshop786-1711.vercel.app/api/upload";
-    const LIVE_STORE_URL = "";
+
+    const DEFAULT_COLLECTIONS = [
+      { id: "wireless-earbuds", label: "Earbuds", filter_value: "Wireless Earbuds", image_path: "/collections/earbuds.png", sort_order: 1 },
+      { id: "wireless-headphones", label: "Headphones", filter_value: "Wireless Headphones", image_path: "/collections/headphones.png", sort_order: 2 },
+      { id: "sound-bars-home-theater", label: "Sound Bars", filter_value: "Sound Bars & Home Theater", image_path: "/collections/soundbars.png", sort_order: 3 },
+      { id: "portable-speakers", label: "Portable", filter_value: "Portable Speakers", image_path: "/collections/portable.png", sort_order: 4 },
+      { id: "2-1-speaker", label: "2.1 Speaker", filter_value: "2.1 Speaker", image_path: "/collections/speaker21.png", sort_order: 5 },
+      { id: "wired-earphones", label: "Wired", filter_value: "Wired Earphones", image_path: "/collections/wired.png", sort_order: 6 },
+      { id: "trolley-speakers", label: "Trolley", filter_value: "Trolley Speakers", image_path: "/collections/trolley.png", sort_order: 7 },
+      { id: "mobile-accessories", label: "Accessories", filter_value: "Mobile Accessories", image_path: "/collections/accessories.png", sort_order: 8 },
+    ];
 
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let collectionsCache = [];
+    let collectionsCache = [...DEFAULT_COLLECTIONS];
     let productsCache = [];
 
     function notify(msg) {
@@ -198,7 +204,7 @@
       el.textContent = msg;
       el.classList.remove("hidden");
       clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => el.classList.add("hidden"), 4500);
+      window.__toastTimer = setTimeout(() => el.classList.add("hidden"), 5000);
     }
 
     async function uploadToR2(file, folder) {
@@ -230,15 +236,6 @@
       if (document.getElementById("passInput").value === ADMIN_PASSCODE) {
         document.getElementById("lockScreen").classList.add("hidden");
         document.getElementById("adminApp").classList.remove("hidden");
-        const liveLink = document.getElementById("liveStoreLink");
-        if (LIVE_STORE_URL) {
-          liveLink.href = LIVE_STORE_URL;
-        } else {
-          liveLink.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            notify("ℹ️ LIVE_STORE_URL set nahi hai.");
-          });
-        }
         await loadAll();
       } else {
         alert("Galat passcode!");
@@ -246,6 +243,22 @@
     });
 
     document.getElementById("refreshBtn").addEventListener("click", loadAll);
+
+    document.getElementById("syncDefaultsBtn").addEventListener("click", async () => {
+      const { error: sErr } = await sb.from("store_settings").upsert({
+        id: "main",
+        banner_image: document.getElementById("bannerImageInput").value.trim() || "/banner.png",
+        banner_title: document.getElementById("bannerTitleInput").value.trim() || "GROW MORE AUDIO & ACCESSORIES",
+        banner_subtitle: document.getElementById("bannerSubtitleInput").value.trim() || "Crystal Clear Sound • Fast Charging • Official Warranty",
+      });
+      if (sErr) return notify("❌ store_settings: " + sErr.message);
+
+      const { error: cErr } = await sb.from("collections").upsert(DEFAULT_COLLECTIONS);
+      if (cErr) return notify("❌ collections: " + cErr.message);
+
+      notify("✅ Default banner aur collections Supabase mein sync ho gaye!");
+      await loadAll();
+    });
 
     async function loadAll() {
       const { data: settings, error: setErr } = await sb.from("store_settings").select("*").eq("id", "main").maybeSingle();
@@ -261,7 +274,7 @@
 
       const { data: cols, error: colErr } = await sb.from("collections").select("*").order("sort_order", { ascending: true });
       if (colErr) notify("❌ collections: " + colErr.message);
-      collectionsCache = cols || [];
+      collectionsCache = (cols && cols.length) ? cols : [...DEFAULT_COLLECTIONS];
       renderCollections();
 
       const { data: prods, error: prodErr } = await sb.from("products").select("*");
@@ -391,6 +404,10 @@
     function renderProducts() {
       const list = document.getElementById("productsList");
       list.innerHTML = "";
+      if (!productsCache.length) {
+        list.innerHTML = `<div class="sm:col-span-2 bg-white rounded-2xl border border-neutral-200 p-8 text-center text-sm text-neutral-500">Abhi Supabase mein koi product nahi hai. Left side se product add karein aur R2 image upload ya URL daal kar save karein.</div>`;
+        return;
+      }
       productsCache.forEach((p) => {
         const card = document.createElement("div");
         card.className = "bg-white rounded-2xl border border-neutral-200 p-4 flex gap-4 items-center";
