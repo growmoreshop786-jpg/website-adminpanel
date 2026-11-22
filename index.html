@@ -182,17 +182,13 @@
   </div>
 
   <script>
-    // === CONFIGURE THESE VALUES BEFORE DEPLOYING ===
     const ADMIN_PASSCODE = "growmore2026";
-    const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
-    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";
-    // Backend endpoint that uploads file to R2 and returns { url: "https://pub-d70940bb93eb4727953b2e2c02263b46.r2.dev/..." }
+    const SUPABASE_URL = "https://qqhriwqrmnxkzvxznwgj.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_E82sBQzTXpTMtTaQ-s0TVg_rKmjkrVS";
     const R2_UPLOAD_ENDPOINT = "https://growmore-marketplace-admin-6h7nzun74-growmoreshop786-1711.vercel.app/api/upload";
-    const LIVE_STORE_URL = ""; // Optional: put live customer storefront URL here
+    const LIVE_STORE_URL = "";
 
-    const sb = (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY !== "YOUR-SUPABASE-ANON-KEY")
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-      : null;
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let collectionsCache = [];
     let productsCache = [];
@@ -217,7 +213,6 @@
       return data.url;
     }
 
-    // Tabs
     document.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const target = btn.dataset.tab;
@@ -230,7 +225,6 @@
       });
     });
 
-    // Login
     document.getElementById("loginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       if (document.getElementById("passInput").value === ADMIN_PASSCODE) {
@@ -254,13 +248,9 @@
     document.getElementById("refreshBtn").addEventListener("click", loadAll);
 
     async function loadAll() {
-      if (!sb) {
-        notify("❌ Pehle HTML ke andar SUPABASE_URL aur SUPABASE_ANON_KEY darj karein");
-        return;
-      }
+      const { data: settings, error: setErr } = await sb.from("store_settings").select("*").eq("id", "main").maybeSingle();
+      if (setErr) notify("❌ store_settings: " + setErr.message);
 
-      // Banner
-      const { data: settings } = await sb.from("store_settings").select("*").eq("id", "main").maybeSingle();
       const bImg = settings?.banner_image || "/banner.png";
       const bTitle = settings?.banner_title || "GROW MORE AUDIO & ACCESSORIES";
       const bSub = settings?.banner_subtitle || "Crystal Clear Sound • Fast Charging • Official Warranty";
@@ -269,22 +259,21 @@
       document.getElementById("bannerTitleInput").value = bTitle;
       document.getElementById("bannerSubtitleInput").value = bSub;
 
-      // Collections
-      const { data: cols } = await sb.from("collections").select("*").order("sort_order", { ascending: true });
+      const { data: cols, error: colErr } = await sb.from("collections").select("*").order("sort_order", { ascending: true });
+      if (colErr) notify("❌ collections: " + colErr.message);
       collectionsCache = cols || [];
       renderCollections();
 
-      // Products
-      const { data: prods } = await sb.from("products").select("*");
+      const { data: prods, error: prodErr } = await sb.from("products").select("*");
+      if (prodErr) notify("❌ products: " + prodErr.message);
       productsCache = prods || [];
       renderProducts();
 
-      // Orders
-      const { data: orders } = await sb.from("orders").select("*");
+      const { data: orders, error: ordErr } = await sb.from("orders").select("*");
+      if (ordErr) notify("❌ orders: " + ordErr.message);
       renderOrders(orders || []);
     }
 
-    // Banner events
     document.getElementById("bannerImageInput").addEventListener("input", (e) => {
       document.getElementById("bannerPreview").src = e.target.value || "/banner.png";
     });
@@ -304,7 +293,6 @@
     });
 
     document.getElementById("saveBannerBtn").addEventListener("click", async () => {
-      if (!sb) return;
       const payload = {
         id: "main",
         banner_image: document.getElementById("bannerImageInput").value.trim(),
@@ -317,7 +305,6 @@
       await loadAll();
     });
 
-    // Collections render & upload
     function renderCollections() {
       const grid = document.getElementById("collectionsGrid");
       grid.innerHTML = "";
@@ -345,7 +332,7 @@
           const file = e.target.files?.[0];
           const idx = Number(e.target.dataset.idx);
           const item = collectionsCache[idx];
-          if (!file || !item || !sb) return;
+          if (!file || !item) return;
           try {
             const url = await uploadToR2(file, "collections");
             const { error } = await sb.from("collections").upsert({ ...item, image_path: url });
@@ -359,7 +346,6 @@
       });
     }
 
-    // Products render & CRUD
     document.getElementById("prodFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -383,7 +369,6 @@
 
     document.getElementById("productForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (!sb) return;
       const existingId = document.getElementById("prodId").value;
       const row = {
         id: existingId || `gm-${Date.now()}`,
@@ -445,7 +430,7 @@
 
       list.querySelectorAll(".del-prod").forEach((btn) => {
         btn.addEventListener("click", async () => {
-          if (!sb || !confirm("Product delete karna hai?")) return;
+          if (!confirm("Product delete karna hai?")) return;
           const { error } = await sb.from("products").delete().eq("id", btn.dataset.del);
           if (error) return notify("❌ " + error.message);
           notify("🗑️ Product delete ho gaya");
@@ -481,7 +466,6 @@
 
       list.querySelectorAll(".order-status").forEach((sel) => {
         sel.addEventListener("change", async () => {
-          if (!sb) return;
           const { error } = await sb.from("orders").update({ status: sel.value }).eq("id", sel.dataset.order);
           if (error) return notify("❌ " + error.message);
           notify(`✅ Order ${sel.dataset.order} → ${sel.value}`);
