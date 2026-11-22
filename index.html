@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GROW MORE — Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-neutral-50 text-neutral-900 min-h-screen">
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-neutral-900 text-white text-xs font-semibold px-4 py-3 rounded-xl shadow-xl border border-neutral-700 max-w-md"></div>
+
+  <!-- Lock Screen -->
+  <div id="lockScreen" class="min-h-screen bg-neutral-950 text-white flex items-center justify-center p-4">
+    <form id="loginForm" class="w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
+      <div class="text-center">
+        <h1 class="text-2xl font-black tracking-tight">GROW<span class="text-emerald-500">MORE</span></h1>
+        <p class="text-xs text-neutral-400 mt-1">HTML Admin Control Center</p>
+      </div>
+      <input id="passInput" type="password" placeholder="Admin Passcode darj karein" required
+        class="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500" />
+      <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-sm cursor-pointer">
+        Unlock Dashboard
+      </button>
+    </form>
+  </div>
+
+  <!-- Main Admin App -->
+  <div id="adminApp" class="hidden min-h-screen">
+    <header class="bg-black text-white px-4 sm:px-8 py-4 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="font-black text-xl tracking-tight">GROW<span class="text-emerald-500">MORE</span></span>
+          <span class="text-[11px] bg-neutral-800 text-neutral-300 px-2.5 py-1 rounded-full font-semibold">HTML ADMIN</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="refreshBtn" type="button" class="bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer">
+            Refresh Data
+          </button>
+          <a id="liveStoreLink" href="#" target="_blank" rel="noopener noreferrer"
+            class="bg-emerald-600 hover:bg-emerald-500 text-xs font-bold px-4 py-2 rounded-xl">
+            View Live Store →
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
+      <div class="flex flex-wrap gap-2 border-b border-neutral-200 pb-4">
+        <button data-tab="banner" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-black text-white cursor-pointer">Hero Banner</button>
+        <button data-tab="collections" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-white text-neutral-600 border border-neutral-200 cursor-pointer">Circular Collections</button>
+        <button data-tab="products" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-white text-neutral-600 border border-neutral-200 cursor-pointer">Products</button>
+        <button data-tab="orders" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-white text-neutral-600 border border-neutral-200 cursor-pointer">Orders</button>
+      </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-8 py-8">
+      <!-- TAB 1: HERO BANNER -->
+      <section id="tab-banner" class="tab-panel bg-white rounded-2xl border border-neutral-200 p-6 space-y-5 max-w-2xl">
+        <h2 class="text-lg font-black uppercase">Update Hero Banner</h2>
+
+        <div class="rounded-xl overflow-hidden border border-neutral-200 bg-black">
+          <img id="bannerPreview" src="/banner.png" alt="Banner preview" class="w-full max-h-64 object-cover" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Upload Banner Image (R2 via Upload Endpoint)</label>
+          <input id="bannerFile" type="file" accept="image/*"
+            class="text-xs file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-black file:text-white file:font-bold cursor-pointer" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Banner Image URL (Supabase mein save hoga)</label>
+          <input id="bannerImageInput" type="text"
+            class="w-full border border-neutral-300 rounded-xl px-3.5 py-2.5 text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Banner Title</label>
+          <input id="bannerTitleInput" type="text"
+            class="w-full border border-neutral-300 rounded-xl px-3.5 py-2.5 text-sm" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold mb-1">Banner Subtitle</label>
+          <input id="bannerSubtitleInput" type="text"
+            class="w-full border border-neutral-300 rounded-xl px-3.5 py-2.5 text-sm" />
+        </div>
+
+        <button id="saveBannerBtn" type="button"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl text-sm cursor-pointer">
+          Save Banner to Supabase
+        </button>
+      </section>
+
+      <!-- TAB 2: CIRCULAR COLLECTIONS -->
+      <section id="tab-collections" class="tab-panel hidden">
+        <div id="collectionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"></div>
+      </section>
+
+      <!-- TAB 3: PRODUCTS -->
+      <section id="tab-products" class="tab-panel hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <form id="productForm" class="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4 h-fit">
+            <h2 id="productFormTitle" class="text-base font-black uppercase">Add New Product</h2>
+            <input id="prodId" type="hidden" />
+
+            <div>
+              <label class="block text-xs font-bold mb-1">Product Name *</label>
+              <input id="prodName" type="text" required class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold mb-1">Subtitle / Features</label>
+              <input id="prodSubtitle" type="text" class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold mb-1">Category</label>
+              <select id="prodCategory" class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm">
+                <option value="Wireless Earbuds">Wireless Earbuds</option>
+                <option value="Wireless Headphones">Wireless Headphones</option>
+                <option value="Sound Bars & Home Theater">Sound Bars & Home Theater</option>
+                <option value="Portable Speakers">Portable Speakers</option>
+                <option value="2.1 Speaker">2.1 Speaker</option>
+                <option value="Wired Earphones">Wired Earphones</option>
+                <option value="Trolley Speakers">Trolley Speakers</option>
+                <option value="Mobile Accessories">Mobile Accessories</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold mb-1">Sale Price (Rs) *</label>
+                <input id="prodPrice" type="number" required class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Original Price (Rs)</label>
+                <input id="prodOriginalPrice" type="number" class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold mb-1">Discount Label</label>
+                <input id="prodDiscount" type="text" placeholder="25% OFF" class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Badge</label>
+                <input id="prodBadge" type="text" placeholder="BEST SELLER" class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-sm" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold mb-1">Product Image (R2 Upload)</label>
+              <input id="prodFile" type="file" accept="image/*"
+                class="text-xs file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-black file:text-white file:font-bold cursor-pointer" />
+              <input id="prodImage" type="text" placeholder="Ya direct image URL paste karein"
+                class="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs mt-2" />
+            </div>
+
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm cursor-pointer">
+                Save Product
+              </button>
+              <button id="cancelEditBtn" type="button" class="hidden px-4 py-3 rounded-xl border border-neutral-300 text-xs font-bold cursor-pointer">
+                Cancel
+              </button>
+            </div>
+          </form>
+
+          <div id="productsList" class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+        </div>
+      </section>
+
+      <!-- TAB 4: ORDERS -->
+      <section id="tab-orders" class="tab-panel hidden space-y-4">
+        <div id="ordersList" class="space-y-4"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // === CONFIGURE THESE VALUES BEFORE DEPLOYING ===
+    const ADMIN_PASSCODE = "growmore2026";
+    const SUPABASE_URL = "https://YOUR-PROJECT-REF.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR-SUPABASE-ANON-KEY";
+    // Backend endpoint that uploads file to R2 and returns { url: "https://pub-d70940bb93eb4727953b2e2c02263b46.r2.dev/..." }
+    const R2_UPLOAD_ENDPOINT = "https://growmore-marketplace-admin-6h7nzun74-growmoreshop786-1711.vercel.app/api/upload";
+    const LIVE_STORE_URL = ""; // Optional: put live customer storefront URL here
+
+    const sb = (SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY !== "YOUR-SUPABASE-ANON-KEY")
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    let collectionsCache = [];
+    let productsCache = [];
+
+    function notify(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.remove("hidden");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => el.classList.add("hidden"), 4500);
+    }
+
+    async function uploadToR2(file, folder) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", folder);
+      const res = await fetch(R2_UPLOAD_ENDPOINT, { method: "POST", body: formData });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "R2 upload failed");
+      }
+      return data.url;
+    }
+
+    // Tabs
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.dataset.tab;
+        document.querySelectorAll(".tab-btn").forEach((b) => {
+          b.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-white text-neutral-600 border border-neutral-200 cursor-pointer";
+        });
+        btn.className = "tab-btn px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide bg-black text-white cursor-pointer";
+        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.add("hidden"));
+        document.getElementById(`tab-${target}`).classList.remove("hidden");
+      });
+    });
+
+    // Login
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (document.getElementById("passInput").value === ADMIN_PASSCODE) {
+        document.getElementById("lockScreen").classList.add("hidden");
+        document.getElementById("adminApp").classList.remove("hidden");
+        const liveLink = document.getElementById("liveStoreLink");
+        if (LIVE_STORE_URL) {
+          liveLink.href = LIVE_STORE_URL;
+        } else {
+          liveLink.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            notify("ℹ️ LIVE_STORE_URL set nahi hai.");
+          });
+        }
+        await loadAll();
+      } else {
+        alert("Galat passcode!");
+      }
+    });
+
+    document.getElementById("refreshBtn").addEventListener("click", loadAll);
+
+    async function loadAll() {
+      if (!sb) {
+        notify("❌ Pehle HTML ke andar SUPABASE_URL aur SUPABASE_ANON_KEY darj karein");
+        return;
+      }
+
+      // Banner
+      const { data: settings } = await sb.from("store_settings").select("*").eq("id", "main").maybeSingle();
+      const bImg = settings?.banner_image || "/banner.png";
+      const bTitle = settings?.banner_title || "GROW MORE AUDIO & ACCESSORIES";
+      const bSub = settings?.banner_subtitle || "Crystal Clear Sound • Fast Charging • Official Warranty";
+      document.getElementById("bannerPreview").src = bImg;
+      document.getElementById("bannerImageInput").value = bImg;
+      document.getElementById("bannerTitleInput").value = bTitle;
+      document.getElementById("bannerSubtitleInput").value = bSub;
+
+      // Collections
+      const { data: cols } = await sb.from("collections").select("*").order("sort_order", { ascending: true });
+      collectionsCache = cols || [];
+      renderCollections();
+
+      // Products
+      const { data: prods } = await sb.from("products").select("*");
+      productsCache = prods || [];
+      renderProducts();
+
+      // Orders
+      const { data: orders } = await sb.from("orders").select("*");
+      renderOrders(orders || []);
+    }
+
+    // Banner events
+    document.getElementById("bannerImageInput").addEventListener("input", (e) => {
+      document.getElementById("bannerPreview").src = e.target.value || "/banner.png";
+    });
+
+    document.getElementById("bannerFile").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        notify("⏳ Banner image R2 mein upload ho rahi hai...");
+        const url = await uploadToR2(file, "banners");
+        document.getElementById("bannerImageInput").value = url;
+        document.getElementById("bannerPreview").src = url;
+        notify("✅ Image R2 par upload ho gayi! Ab Save Banner dabayein.");
+      } catch (err) {
+        notify("❌ " + err.message);
+      }
+    });
+
+    document.getElementById("saveBannerBtn").addEventListener("click", async () => {
+      if (!sb) return;
+      const payload = {
+        id: "main",
+        banner_image: document.getElementById("bannerImageInput").value.trim(),
+        banner_title: document.getElementById("bannerTitleInput").value.trim(),
+        banner_subtitle: document.getElementById("bannerSubtitleInput").value.trim(),
+      };
+      const { error } = await sb.from("store_settings").upsert(payload);
+      if (error) return notify("❌ " + error.message);
+      notify("✅ Banner text aur image link Supabase mein save ho gaye!");
+      await loadAll();
+    });
+
+    // Collections render & upload
+    function renderCollections() {
+      const grid = document.getElementById("collectionsGrid");
+      grid.innerHTML = "";
+      collectionsCache.forEach((c, idx) => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl border border-neutral-200 p-4 flex flex-col items-center text-center gap-3";
+        card.innerHTML = `
+          <div class="w-24 h-24 rounded-full overflow-hidden border border-neutral-200 bg-neutral-100">
+            <img src="${c.image_path || ""}" alt="${c.label || ""}" class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h3 class="font-bold text-sm">${c.label || ""}</h3>
+            <p class="text-[11px] text-neutral-400">${c.filter_value || ""}</p>
+          </div>
+          <label class="w-full bg-black hover:bg-neutral-800 text-white text-xs font-bold py-2.5 px-3 rounded-xl cursor-pointer">
+            Change Icon (R2)
+            <input type="file" accept="image/*" class="hidden col-file" data-idx="${idx}" />
+          </label>
+        `;
+        grid.appendChild(card);
+      });
+
+      grid.querySelectorAll(".col-file").forEach((input) => {
+        input.addEventListener("change", async (e) => {
+          const file = e.target.files?.[0];
+          const idx = Number(e.target.dataset.idx);
+          const item = collectionsCache[idx];
+          if (!file || !item || !sb) return;
+          try {
+            const url = await uploadToR2(file, "collections");
+            const { error } = await sb.from("collections").upsert({ ...item, image_path: url });
+            if (error) throw error;
+            notify(`✅ ${item.label} update ho gaya!`);
+            await loadAll();
+          } catch (err) {
+            notify("❌ " + err.message);
+          }
+        });
+      });
+    }
+
+    // Products render & CRUD
+    document.getElementById("prodFile").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const url = await uploadToR2(file, "products");
+        document.getElementById("prodImage").value = url;
+        notify("✅ Product image R2 par upload ho gayi!");
+      } catch (err) {
+        notify("❌ " + err.message);
+      }
+    });
+
+    function resetProdForm() {
+      document.getElementById("productForm").reset();
+      document.getElementById("prodId").value = "";
+      document.getElementById("productFormTitle").textContent = "Add New Product";
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+    }
+
+    document.getElementById("cancelEditBtn").addEventListener("click", resetProdForm);
+
+    document.getElementById("productForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!sb) return;
+      const existingId = document.getElementById("prodId").value;
+      const row = {
+        id: existingId || `gm-${Date.now()}`,
+        name: document.getElementById("prodName").value.trim(),
+        subtitle: document.getElementById("prodSubtitle").value.trim(),
+        category: document.getElementById("prodCategory").value,
+        price: Number(document.getElementById("prodPrice").value),
+        original_price: document.getElementById("prodOriginalPrice").value ? Number(document.getElementById("prodOriginalPrice").value) : null,
+        discount_label: document.getElementById("prodDiscount").value.trim() || null,
+        badge: document.getElementById("prodBadge").value.trim() || null,
+        image_path: document.getElementById("prodImage").value.trim() || "/products/earbuds.png",
+      };
+      const { error } = await sb.from("products").upsert(row);
+      if (error) return notify("❌ " + error.message);
+      notify(existingId ? "✅ Product update ho gaya!" : "✅ Naya product add ho gaya!");
+      resetProdForm();
+      await loadAll();
+    });
+
+    function renderProducts() {
+      const list = document.getElementById("productsList");
+      list.innerHTML = "";
+      productsCache.forEach((p) => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl border border-neutral-200 p-4 flex gap-4 items-center";
+        card.innerHTML = `
+          <img src="${p.image_path || ""}" alt="${p.name || ""}" class="w-20 h-20 object-contain rounded-xl bg-neutral-100 p-2" />
+          <div class="flex-1 min-w-0">
+            <p class="text-[11px] font-bold text-emerald-600">${p.category || ""}</p>
+            <h3 class="font-bold text-sm truncate">${p.name || ""}</h3>
+            <p class="text-xs font-black mt-0.5">Rs. ${Number(p.price || 0).toLocaleString()}</p>
+            <div class="flex gap-2 mt-2">
+              <button data-edit="${p.id}" class="edit-prod text-xs font-bold px-3 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200 cursor-pointer">Edit</button>
+              <button data-del="${p.id}" class="del-prod text-xs font-bold px-3 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 cursor-pointer">Delete</button>
+            </div>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+
+      list.querySelectorAll(".edit-prod").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const p = productsCache.find((x) => String(x.id) === String(btn.dataset.edit));
+          if (!p) return;
+          document.getElementById("prodId").value = p.id;
+          document.getElementById("prodName").value = p.name || "";
+          document.getElementById("prodSubtitle").value = p.subtitle || "";
+          document.getElementById("prodCategory").value = p.category || "Wireless Earbuds";
+          document.getElementById("prodPrice").value = p.price || "";
+          document.getElementById("prodOriginalPrice").value = p.original_price || "";
+          document.getElementById("prodDiscount").value = p.discount_label || "";
+          document.getElementById("prodBadge").value = p.badge || "";
+          document.getElementById("prodImage").value = p.image_path || "";
+          document.getElementById("productFormTitle").textContent = "Edit Product";
+          document.getElementById("cancelEditBtn").classList.remove("hidden");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+
+      list.querySelectorAll(".del-prod").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          if (!sb || !confirm("Product delete karna hai?")) return;
+          const { error } = await sb.from("products").delete().eq("id", btn.dataset.del);
+          if (error) return notify("❌ " + error.message);
+          notify("🗑️ Product delete ho gaya");
+          await loadAll();
+        });
+      });
+    }
+
+    function renderOrders(orders) {
+      const list = document.getElementById("ordersList");
+      list.innerHTML = "";
+      if (!orders.length) {
+        list.innerHTML = `<div class="bg-white rounded-2xl border border-neutral-200 p-8 text-center text-sm text-neutral-500">Abhi tak koi order nahi aaya.</div>`;
+        return;
+      }
+      orders.forEach((o) => {
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-2xl border border-neutral-200 p-5 flex flex-wrap items-center justify-between gap-4";
+        card.innerHTML = `
+          <div>
+            <p class="text-xs font-black text-emerald-600">${o.id}</p>
+            <h3 class="font-bold text-sm">${o.customer_name || o.customerName || ""} — ${o.phone || ""}</h3>
+            <p class="text-xs text-neutral-500">${o.address || ""}, ${o.city || ""}</p>
+          </div>
+          <select data-order="${o.id}" class="order-status border border-neutral-300 rounded-xl px-3 py-2 text-xs font-bold">
+            ${["Pending", "Confirmed", "Shipped", "Delivered", "Cancelled"].map(
+              (st) => `<option value="${st}" ${o.status === st ? "selected" : ""}>${st}</option>`
+            ).join("")}
+          </select>
+        `;
+        list.appendChild(card);
+      });
+
+      list.querySelectorAll(".order-status").forEach((sel) => {
+        sel.addEventListener("change", async () => {
+          if (!sb) return;
+          const { error } = await sb.from("orders").update({ status: sel.value }).eq("id", sel.dataset.order);
+          if (error) return notify("❌ " + error.message);
+          notify(`✅ Order ${sel.dataset.order} → ${sel.value}`);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
